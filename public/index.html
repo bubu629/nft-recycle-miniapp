@@ -2,11 +2,414 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NFT Recycle Mini App · 初始化中</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NFT 出售与 80% 回收 Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #070d19;
+      --card: #0f172a;
+      --card-2: #162033;
+      --border: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; }
+    .header {
+      background: linear-gradient(135deg, #0f172a, #172554);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .header h1 { margin: 0 0 6px; font-size: 19px; }
+    .sub { font-size: 13px; color: var(--muted); word-break: break-all; }
+    .wallet-box {
+      margin-top: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px dashed #334155;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .card h2 { margin: 0 0 10px; font-size: 15px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%;
+      background: var(--card-2);
+      color: var(--text);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: var(--accent);
+      color: #04101d;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: #334155; color: var(--text); }
+    button.green { background: var(--accent-2); color: #052e16; }
+    button.warn { background: var(--warn); color: #1c1917; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .nft-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .nft-item {
+      background: var(--card-2);
+      border: 1px solid #26354d;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .nft-img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #0b1220;
+      margin-bottom: 10px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .b-listed { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
+    .b-held { background: rgba(56, 189, 248, 0.18); color: #38bdf8; }
+    .b-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .meta { font-size: 12px; color: var(--muted); margin: 6px 0 10px; }
+    .price-line { font-size: 15px; font-weight: 700; color: #f8fafc; margin: 6px 0; }
+    .event-item {
+      border-bottom: 1px solid #1e293b;
+      padding: 8px 0;
+      font-size: 12px;
+    }
+    .event-item:last-child { border-bottom: none; }
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0284c7;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      z-index: 999;
+      display: none;
+      max-width: 90vw;
+    }
+  </style>
 </head>
-<body style="background:#070d19;color:#f8fafc;font-family:sans-serif;padding:24px;">
-  <h2>🎨 NFT 出售与 80% 回收 Mini App</h2>
-  <p>GitHub Pages 自动部署通道已打通，等待接入 Cloudflare Worker 后端与完整界面。</p>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>🎨 自制 NFT 出售与 80% 回收工作台</h1>
+      <div class="sub">固定回收比例：<b>80%</b> · 回收打款后支持重新上架二次销售 · 结算凭证登记模式</div>
+      <div class="wallet-box">
+        <div>
+          <div style="color:#94a3b8;">官方收款 TON 地址（买方付款/登记凭证）：</div>
+          <div id="receivingWallet" style="font-family:monospace;color:#38bdf8;">UQAi7GWc5DAPgpJxX7eOA_NijNeUHxpiirzAFi1OerKDRt85</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="secondary" onclick="copyWallet()">复制地址</button>
+          <button class="secondary" onclick="loadState()">刷新数据</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🛒 NFT 市场（出售 / 80% 回收 / 二次上架）</h2>
+      <div id="nftList" class="nft-list">加载中...</div>
+    </div>
+
+    <div class="card">
+      <h2>🛠️ 创作者/管理员面板（铸造上架 & 确认回收重售）</h2>
+      <label>管理员密钥（默认：<code>nft_admin_2026_secret</code>）</label>
+      <input id="adminKey" type="password" value="nft_admin_2026_secret" />
+
+      <div class="grid-2">
+        <div>
+          <label>NFT 名称</label>
+          <input id="mintTitle" placeholder="例如：Cyber Panda #01" />
+        </div>
+        <div>
+          <label>售价 & 币种</label>
+          <div style="display:flex;gap:8px;">
+            <input id="mintPrice" type="number" step="0.01" placeholder="10" style="margin-bottom:0;" />
+            <select id="mintCurrency" style="width:105px;margin-bottom:0;">
+              <option value="USDT">USDT</option>
+              <option value="TON">TON</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <label>NFT 图片链接（HTTPS 图片地址）</label>
+      <input id="mintImage" placeholder="https://..." />
+
+      <label>简介（可选）</label>
+      <input id="mintDesc" placeholder="限量自制数字藏品，支持 80% 回收与二次流转" />
+
+      <button class="green" onclick="mintNft()">铸造并上架 NFT</button>
+
+      <hr style="border:none;border-top:1px solid #1e293b;margin:16px 0;" />
+
+      <div class="grid-2">
+        <div>
+          <label>待确认回收的 NFT ID</label>
+          <input id="relistNftId" placeholder="例如：NFT-XXXX" />
+        </div>
+        <div>
+          <label>80% 回收打款交易单号（必填）</label>
+          <input id="relistTxRef" placeholder="填写向用户打款 80% 后的交易单号/哈希" />
+        </div>
+      </div>
+      <label>下一轮重新上架售价（留空则沿用当前售价）</label>
+      <input id="relistNewPrice" type="number" step="0.01" placeholder="例如：12" />
+      <button class="warn" onclick="confirmRecycleAndRelist()">确认 80% 回收打款并重新上架</button>
+    </div>
+
+    <div class="card">
+      <h2>📜 最近流转记录</h2>
+      <div id="eventList">暂无记录</div>
+    </div>
+
+    <div class="sub" style="text-align:center;margin-top:8px;">
+      需要人工核销或客服协助？联系 <a href="https://t.me/Userstudiobot" target="_blank" style="color:#38bdf8;">@Userstudiobot</a>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API_BASE = "https://nft-recycle-api.zhangbanzhuan.workers.dev";
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+    const tgUserId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? String(tg.initDataUnsafe.user.id) : "";
+
+    function showToast(msg, isErr = false) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.background = isErr ? "#dc2626" : "#0284c7";
+      el.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => { el.style.display = "none"; }, 3200);
+    }
+
+    function copyWallet() {
+      const addr = document.getElementById("receivingWallet").textContent.trim();
+      navigator.clipboard?.writeText(addr);
+      showToast("已复制收款 TON 地址");
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(API_BASE + path, options);
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "请求失败");
+      }
+      return data;
+    }
+
+    function statusBadge(status) {
+      if (status === "listed") return '<span class="badge b-listed">在售中</span>';
+      if (status === "held") return '<span class="badge b-held">已持有（可申请 80% 回收）</span>';
+      return '<span class="badge b-pending">回收打款处理中</span>';
+    }
+
+    function renderNfts(nfts) {
+      const box = document.getElementById("nftList");
+      if (!nfts || !nfts.length) {
+        box.innerHTML = '<div class="sub">暂无 NFT，可在下方“创作者/管理员面板”铸造上架第一枚。</div>';
+        return;
+      }
+      box.innerHTML = nfts.map(item => {
+        const refundAmt = (Number(item.price) * Number(item.recycle_rate || 0.8)).toFixed(2);
+        let actionHtml = "";
+        if (item.status === "listed") {
+          actionHtml = `<button onclick="buyNft('${item.id}', '${item.price}', '${item.currency}')">购买并登记凭证</button>`;
+        } else if (item.status === "held") {
+          actionHtml = `<button class="warn" onclick="requestRecycle('${item.id}', '${refundAmt}', '${item.currency}')">申请 80% 回收（返 ${refundAmt} ${item.currency}）</button>`;
+        } else {
+          actionHtml = `<button class="secondary" onclick="fillRelist('${item.id}')">填入重售核销表单</button>`;
+        }
+
+        return `
+          <div class="nft-item">
+            <div>
+              <img class="nft-img" src="${item.image_url}" alt="${item.title}" onerror="this.src='https://placehold.co/600x360/162033/94a3b8?text=NFT+Preview'" />
+              <div>${statusBadge(item.status)}<span class="badge" style="background:#334155;color:#e2e8f0;">第 ${item.cycle} 轮</span></div>
+              <div style="font-weight:700;font-size:15px;margin-top:6px;">${item.title} <span style="font-size:11px;color:#94a3b8;">(${item.id})</span></div>
+              <div class="price-line">${item.price} ${item.currency} <span style="font-size:12px;color:#4ade80;font-weight:500;">· 回收返 ${refundAmt} ${item.currency}</span></div>
+              <div class="meta">
+                ${item.description ? item.description + "<br/>" : ""}
+                ${item.owner_wallet ? "持有人钱包: " + item.owner_wallet + "<br/>" : ""}
+                ${item.buy_tx_ref ? "购买单号: " + item.buy_tx_ref + "<br/>" : ""}
+                ${item.recycle_payout_wallet ? "回收收款钱包: " + item.recycle_payout_wallet : ""}
+              </div>
+            </div>
+            <div>${actionHtml}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderEvents(events) {
+      const box = document.getElementById("eventList");
+      if (!events || !events.length) {
+        box.innerHTML = '<div class="sub">暂无流转记录</div>';
+        return;
+      }
+      box.innerHTML = events.map(ev => `
+        <div class="event-item">
+          <b>[${ev.nft_id}]</b> 第 ${ev.cycle} 轮 · <b>${ev.event_type}</b> · 金额: ${ev.amount} · ${ev.note || ""}
+          ${ev.tx_ref ? `<br/><span style="color:#38bdf8;">凭证单号: ${ev.tx_ref}</span>` : ""}
+          ${ev.wallet_address ? `<br/><span style="color:#94a3b8;">钱包: ${ev.wallet_address}</span>` : ""}
+        </div>
+      `).join("");
+    }
+
+    async function loadState() {
+      try {
+        const data = await api("/api/state");
+        document.getElementById("receivingWallet").textContent = data.receiving_wallet;
+        renderNfts(data.nfts);
+        renderEvents(data.events);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function mintNft() {
+      try {
+        const admin_key = document.getElementById("adminKey").value.trim();
+        const title = document.getElementById("mintTitle").value.trim();
+        const price = document.getElementById("mintPrice").value.trim();
+        const currency = document.getElementById("mintCurrency").value;
+        const image_url = document.getElementById("mintImage").value.trim();
+        const description = document.getElementById("mintDesc").value.trim();
+
+        const res = await api("/api/nfts/mint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Key": admin_key },
+          body: JSON.stringify({ title, price, currency, image_url, description }),
+        });
+        showToast("铸造上架成功：" + res.id);
+        document.getElementById("mintTitle").value = "";
+        document.getElementById("mintPrice").value = "";
+        document.getElementById("mintImage").value = "";
+        document.getElementById("mintDesc").value = "";
+        loadState();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function buyNft(nftId, price, currency) {
+      const buyer_wallet = prompt(`请先向官方钱包转账 ${price} ${currency}，然后输入你的 TON 钱包地址：`);
+      if (!buyer_wallet) return;
+      const tx_ref = prompt("请输入该笔转账的交易单号 / 哈希（tx_ref）：");
+      if (!tx_ref) return;
+
+      try {
+        await api("/api/nfts/buy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nft_id: nftId, buyer_tg_id: tgUserId, buyer_wallet, tx_ref }),
+        });
+        showToast("购买凭证已登记，NFT 已归属你");
+        loadState();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function requestRecycle(nftId, refundAmt, currency) {
+      const payout_wallet = prompt(`该 NFT 可按 80% 回收，预计返还 ${refundAmt} ${currency}。\n请输入接收回收款的 TON 钱包地址：`);
+      if (!payout_wallet) return;
+
+      try {
+        await api("/api/nfts/recycle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nft_id: nftId, actor_tg_id: tgUserId, payout_wallet }),
+        });
+        showToast("80% 回收申请已提交，等待打款核销");
+        loadState();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function fillRelist(nftId) {
+      document.getElementById("relistNftId").value = nftId;
+      document.getElementById("relistTxRef").focus();
+      showToast("已填入 " + nftId + "，请填写打款单号后确认重售");
+    }
+
+    async function confirmRecycleAndRelist() {
+      try {
+        const admin_key = document.getElementById("adminKey").value.trim();
+        const nft_id = document.getElementById("relistNftId").value.trim();
+        const recycle_tx_ref = document.getElementById("relistTxRef").value.trim();
+        const new_price = document.getElementById("relistNewPrice").value.trim();
+
+        const res = await api("/api/nfts/relist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Key": admin_key },
+          body: JSON.stringify({ nft_id, recycle_tx_ref, new_price: new_price || undefined }),
+        });
+        showToast(`已完成回收打款，进入第 ${res.next_cycle} 轮销售（${res.price}）`);
+        document.getElementById("relistNftId").value = "";
+        document.getElementById("relistTxRef").value = "";
+        document.getElementById("relistNewPrice").value = "";
+        loadState();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    loadState();
+  </script>
 </body>
 </html>
