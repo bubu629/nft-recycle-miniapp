@@ -1,0 +1,8 @@
+name = "nft-recycle-api"
+main = "src/index.js"
+compatibility_date = "2025-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nft-recycle-db"
+database_id = "e749e0d7-7f39-4be7-b705-aff5eac13652"
